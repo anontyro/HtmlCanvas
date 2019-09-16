@@ -1,0 +1,11 @@
+{
+  "name": "canvasproject",
+  "version": "1.0.0",
+  "description": "project playing with different aspects of canvas",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "alex wilkinson",
+  "license": "MIT"
+}
