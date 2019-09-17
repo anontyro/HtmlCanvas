@@ -73,4 +73,22 @@ const buildBall = context => {
   setInterval (draw, 10);
 };
 
+const buildPaddle = context => {
+  const paddleHeight = 10;
+  const paddleWidth = 75;
+  const paddleX = (canvas.width - paddleWidth) / 2;
+
+  const draw = () => {
+    createSquare (context, {
+      xCord: paddleX,
+      yCord: canvas.height - (paddleHeight + 20),
+      width: paddleWidth,
+      height: paddleHeight,
+      colour: '#0095DD',
+    });
+  };
+  setInterval (draw, 10);
+};
+
 buildBall (ctx);
+buildPaddle (ctx);
