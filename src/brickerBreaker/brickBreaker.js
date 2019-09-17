@@ -1,5 +1,30 @@
 const canvas = document.querySelector ('#brickBracker');
 const ctx = canvas.getContext ('2d');
+let keyPressed = null;
+let gameInterval = null;
+const paddleHeight = 10;
+const paddleOffSet = 10;
+const paddleWidth = 75;
+let paddleX = (canvas.width - paddleWidth) / 2;
+const user = {
+  lives: 5,
+  score: 0,
+  paddleHits: 0,
+};
+
+const ELEMENT_SELECTOR = {
+  USER_LIVES: 'life-count',
+};
+
+const KEYNUM = {
+  LEFT: 'LEFT',
+  RIGHT: 'RIGHT',
+};
+
+const updateLifeCounter = () => {
+  document.querySelector (`#${ELEMENT_SELECTOR.USER_LIVES}`).innerHTML =
+    user.lives;
+};
 
 const randomIntFromInterval = (min, max) => {
   // min and max included
@@ -43,7 +68,7 @@ const randColour = () => {
   }
 };
 
-const buildBall = context => {
+const setupGame = context => {
   // draw the ball
   const ballRadius = 10;
   let dx = 1;
@@ -53,32 +78,67 @@ const buildBall = context => {
   let colour = '#0095DD';
 
   const draw = () => {
-    // if hit top wall reverse or if hits bottom reverse
-    if (y + dy < ballRadius || y + dy > canvas.height - ballRadius) {
-      dy = -dy;
-      colour = randColour ();
+    if (keyPressed === KEYNUM.LEFT && paddleX > paddleOffSet) {
+      paddleX += -7;
+    } else if (
+      keyPressed === KEYNUM.RIGHT &&
+      paddleX < canvas.width - (paddleWidth + paddleOffSet)
+    ) {
+      paddleX += 7;
     }
+
     // if hit left then reverse or if hit right reverse
     if (x + dx < ballRadius || x + dx > canvas.width - ballRadius) {
       dx = -dx;
       colour = randColour ();
     }
+
+    // if hit top wall reverse
+    if (y + dy < ballRadius) {
+      dy = -dy;
+      colour = randColour ();
+      // if hit bottom lose life
+    } else if (
+      y + dy >
+      canvas.height - (ballRadius + paddleHeight + paddleOffSet)
+    ) {
+      if (x > paddleX && x < paddleX + (paddleWidth + 40)) {
+        console.log (`BALL coords: X: ${x}, Y: ${y}, DX: ${dx}, DY: ${dy}`);
+        console.log (`PADDLE X: ${paddleX} width: ${paddleWidth}`);
+        const ballOnPaddleLocation = x - paddleX;
+        const paddleLeft = paddleWidth / 3;
+        const paddleCentre = paddleLeft * 2;
+        // When ball hits left side of paddle
+        if (ballOnPaddleLocation < paddleLeft) {
+          dy = -dy;
+          dx = -Math.abs (-dx);
+          // When ball hits centre of paddle
+        } else if (
+          ballOnPaddleLocation > paddleLeft &&
+          ballOnPaddleLocation < paddleCentre
+        ) {
+          dy = -dy;
+          dx = 1;
+          // when ball hits right side of paddle
+        } else if (
+          ballOnPaddleLocation > paddleCentre &&
+          ballOnPaddleLocation <= paddleWidth
+        ) {
+          dy = -dy;
+          dx = +Math.abs (+dx);
+        }
+      } else {
+        y = canvas.height / 3;
+        x = canvas.width / 2;
+        --user.lives;
+        if (user.lives <= 0) {
+          clearInterval (gameInterval);
+        }
+      }
+    }
+
     context.clearRect (0, 0, canvas.width, canvas.height);
     createBall (context, {x, y, ballRadius, colour});
-    x += dx;
-    y += dy;
-  };
-
-  //animate the ball
-  setInterval (draw, 10);
-};
-
-const buildPaddle = context => {
-  const paddleHeight = 10;
-  const paddleWidth = 75;
-  const paddleX = (canvas.width - paddleWidth) / 2;
-
-  const draw = () => {
     createSquare (context, {
       xCord: paddleX,
       yCord: canvas.height - (paddleHeight + 20),
@@ -86,9 +146,33 @@ const buildPaddle = context => {
       height: paddleHeight,
       colour: '#0095DD',
     });
+    x += dx;
+    y += dy;
+    updateLifeCounter ();
   };
-  setInterval (draw, 10);
+
+  //animate the ball
+  gameInterval = setInterval (draw, 10);
 };
 
-buildBall (ctx);
-buildPaddle (ctx);
+const createEventListeners = () => {
+  const keyDownHandler = e => {
+    if (e.key === 'Right' || e.key === 'ArrowRight' || e.key === 'd') {
+      keyPressed = KEYNUM.RIGHT;
+    } else if (e.key === 'Left' || e.key === 'ArrowLeft' || e.key === 'a') {
+      keyPressed = KEYNUM.LEFT;
+    }
+  };
+  const keyUpHandler = e => {
+    if (e.key === 'Right' || e.key === 'ArrowRight' || e.key === 'd') {
+      keyPressed = null;
+    } else if (e.key === 'Left' || e.key === 'ArrowLeft' || e.key === 'a') {
+      keyPressed = null;
+    }
+  };
+  document.addEventListener ('keydown', keyDownHandler, false);
+  document.addEventListener ('keyup', keyUpHandler, false);
+};
+
+createEventListeners ();
+setupGame (ctx);
