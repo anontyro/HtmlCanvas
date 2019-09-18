@@ -1,16 +1,30 @@
+//
 const canvas = document.querySelector ('#brickBracker');
 const ctx = canvas.getContext ('2d');
-let keyPressed = null;
-let gameInterval = null;
+
+// brick vars
+const brickRowCount = 3;
+const brickColumnCount = 5;
+const brickWidth = 75;
+const brickHeight = 10;
+const brickPadding = 10;
+const brickOffsetTop = 30;
+const brickOffsetLeft = 30;
+const bricks = [];
+
+// paddle vars
 const paddleHeight = 10;
 const paddleOffSet = 10;
 const paddleWidth = 75;
 let paddleX = (canvas.width - paddleWidth) / 2;
+
 const user = {
   lives: 5,
   score: 0,
   paddleHits: 0,
 };
+let gameInterval = null;
+let keyPressed = null;
 
 const ELEMENT_SELECTOR = {
   USER_LIVES: 'life-count',
@@ -48,6 +62,36 @@ const createBall = (context, {x, y, ballRadius, colour = '#0095DD'}) => {
   context.fillStyle = colour;
   context.fill ();
   context.closePath ();
+};
+
+const gridSetup = () => {
+  for (let c = 0; c < brickColumnCount; c++) {
+    bricks[c] = [];
+    for (let r = 0; r < brickRowCount; r++) {
+      bricks[c][r] = {x: 0, y: 0};
+    }
+  }
+};
+
+const drawBricks = context => {
+  const buildGrid = () => {
+    for (let c = 0; c < brickColumnCount; c++) {
+      for (let r = 0; r < brickRowCount; r++) {
+        const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+        const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+        bricks[c][r].x = brickX;
+        bricks[c][r].y = brickY;
+        createSquare (context, {
+          xCord: brickX,
+          yCord: brickY,
+          width: brickWidth,
+          height: brickHeight,
+          colour: '#0095DD',
+        });
+      }
+    }
+  };
+  buildGrid ();
 };
 
 const randColour = () => {
@@ -138,6 +182,7 @@ const setupGame = context => {
     }
 
     context.clearRect (0, 0, canvas.width, canvas.height);
+    drawBricks (context);
     createBall (context, {x, y, ballRadius, colour});
     createSquare (context, {
       xCord: paddleX,
@@ -175,4 +220,5 @@ const createEventListeners = () => {
 };
 
 createEventListeners ();
+gridSetup ();
 setupGame (ctx);
