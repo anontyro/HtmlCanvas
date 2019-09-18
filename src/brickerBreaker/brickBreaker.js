@@ -1,5 +1,10 @@
+const ELEMENT_SELECTOR = {
+  USER_LIVES: 'user-life-count',
+  USER_SCORE: 'user-score',
+  CANVAS_ID: 'brickBreaker',
+};
 //
-const canvas = document.querySelector ('#brickBracker');
+const canvas = document.querySelector (`#${ELEMENT_SELECTOR.CANVAS_ID}`);
 const ctx = canvas.getContext ('2d');
 
 // brick vars
@@ -11,6 +16,13 @@ const brickPadding = 10;
 const brickOffsetTop = 30;
 const brickOffsetLeft = 30;
 const bricks = [];
+
+// draw the ball
+const ballRadius = 10;
+let dx = 1;
+let dy = -5;
+let x = canvas.width / 2;
+let y = canvas.height - 30;
 
 // paddle vars
 const paddleHeight = 10;
@@ -26,18 +38,29 @@ const user = {
 let gameInterval = null;
 let keyPressed = null;
 
-const ELEMENT_SELECTOR = {
-  USER_LIVES: 'life-count',
-};
-
 const KEYNUM = {
   LEFT: 'LEFT',
   RIGHT: 'RIGHT',
 };
 
+const BRICK_TYPE = {
+  NORMAL: {type: 0, points: 10},
+  INDESTRUCTIBLE: 1,
+};
+
 const updateLifeCounter = () => {
   document.querySelector (`#${ELEMENT_SELECTOR.USER_LIVES}`).innerHTML =
     user.lives;
+};
+
+const updateScoreCounter = () => {
+  document.querySelector (`#${ELEMENT_SELECTOR.USER_SCORE}`).innerHTML =
+    user.score;
+};
+
+const addDynamicElements = () => {
+  updateLifeCounter ();
+  updateScoreCounter ();
 };
 
 const randomIntFromInterval = (min, max) => {
@@ -68,15 +91,15 @@ const gridSetup = () => {
   for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
-      bricks[c][r] = {x: 0, y: 0};
+      bricks[c][r] = {x: 0, y: 0, status: 1, type: BRICK_TYPE.NORMAL.type};
     }
   }
 };
 
 const drawBricks = context => {
-  const buildGrid = () => {
-    for (let c = 0; c < brickColumnCount; c++) {
-      for (let r = 0; r < brickRowCount; r++) {
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      if (bricks[c][r].status === 1) {
         const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
         const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
         bricks[c][r].x = brickX;
@@ -90,8 +113,29 @@ const drawBricks = context => {
         });
       }
     }
-  };
-  buildGrid ();
+  }
+};
+
+const brickCollisionDetection = () => {
+  for (let c = 0; c < brickColumnCount; c++) {
+    for (let r = 0; r < brickRowCount; r++) {
+      const b = bricks[c][r];
+      if (b.status === 1) {
+        if (
+          x > b.x &&
+          x < b.x + brickWidth &&
+          y > b.y &&
+          y < b.y + brickHeight
+        ) {
+          dy = -dy;
+          if (b.type === BRICK_TYPE.NORMAL.type) {
+            b.status = 0;
+            user.score += BRICK_TYPE.NORMAL.points;
+          }
+        }
+      }
+    }
+  }
 };
 
 const randColour = () => {
@@ -113,12 +157,6 @@ const randColour = () => {
 };
 
 const setupGame = context => {
-  // draw the ball
-  const ballRadius = 10;
-  let dx = 1;
-  let dy = -5;
-  let x = canvas.width / 2;
-  let y = canvas.height - 30;
   let colour = '#0095DD';
 
   const draw = () => {
@@ -191,9 +229,10 @@ const setupGame = context => {
       height: paddleHeight,
       colour: '#0095DD',
     });
+    brickCollisionDetection ();
     x += dx;
     y += dy;
-    updateLifeCounter ();
+    addDynamicElements ();
   };
 
   //animate the ball
