@@ -3,9 +3,14 @@ const ELEMENT_SELECTOR = {
   USER_SCORE: 'user-score',
   CANVAS_ID: 'brickBreaker',
 };
-//
+// Game Vars
 const canvas = document.querySelector (`#${ELEMENT_SELECTOR.CANVAS_ID}`);
 const ctx = canvas.getContext ('2d');
+const currentLevel = {
+  number: 1,
+  blocksLeft: 0,
+  isLevelOver: false,
+};
 
 // brick vars
 const brickRowCount = 3;
@@ -44,8 +49,8 @@ const KEYNUM = {
 };
 
 const BRICK_TYPE = {
-  NORMAL: {type: 0, points: 10},
-  INDESTRUCTIBLE: 1,
+  NORMAL: {type: 0, points: 10, colour: '0095DD'},
+  INDESTRUCTIBLE: {type: 1, points: 0, colour: '7575a3'},
 };
 
 const updateLifeCounter = () => {
@@ -87,19 +92,60 @@ const createBall = (context, {x, y, ballRadius, colour = '#0095DD'}) => {
   context.closePath ();
 };
 
-const gridSetup = () => {
+const gridSetup = (spaces = 8, indestructibleBlocks = 2) => {
+  const totalOpenSpaces = brickRowCount * brickColumnCount;
+  let totalCommitedSpaces = 0;
+  let avaliableSpaces = spaces;
+  let avaliableIndestructibleBlocks = indestructibleBlocks;
+  const totalSpecialSpaces = spaces + indestructibleBlocks;
+  let previousBlock = null;
+  let breakableBlocks = 0;
+
   for (let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for (let r = 0; r < brickRowCount; r++) {
-      bricks[c][r] = {x: 0, y: 0, status: 1, type: BRICK_TYPE.NORMAL.type};
+      let type = BRICK_TYPE.NORMAL.type;
+      let status = 1;
+      const weightDice = totalSpecialSpaces * 1.5 <
+        totalOpenSpaces - totalCommitedSpaces
+        ? 5
+        : 2;
+      const rand = randomIntFromInterval (1, weightDice);
+      // check to add space
+      if (previousBlock !== 0 && avaliableSpaces > 0 && rand === 1) {
+        status = 0;
+        --avaliableSpaces;
+        ++totalCommitedSpaces;
+        previousBlock = 0;
+      } else if (
+        previousBlock !== BRICK_TYPE.INDESTRUCTIBLE.type &&
+        avaliableIndestructibleBlocks > 0 &&
+        rand === 2
+      ) {
+        type = BRICK_TYPE.INDESTRUCTIBLE.type;
+        --avaliableIndestructibleBlocks;
+        ++totalCommitedSpaces;
+        previousBlock = BRICK_TYPE.INDESTRUCTIBLE.type;
+      } else {
+        previousBlock = BRICK_TYPE.NORMAL.type;
+        ++totalCommitedSpaces;
+        ++breakableBlocks;
+      }
+      bricks[c][r] = {x: 0, y: 0, status, type};
+      ++totalCommitedSpaces;
     }
   }
+  currentLevel.blocksLeft = breakableBlocks;
 };
 
 const drawBricks = context => {
   for (let c = 0; c < brickColumnCount; c++) {
     for (let r = 0; r < brickRowCount; r++) {
       if (bricks[c][r].status === 1) {
+        let colour = BRICK_TYPE.NORMAL.colour;
+        if (bricks[c][r].type === BRICK_TYPE.INDESTRUCTIBLE.type) {
+          colour = BRICK_TYPE.INDESTRUCTIBLE.colour;
+        }
         const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
         const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
         bricks[c][r].x = brickX;
@@ -109,7 +155,7 @@ const drawBricks = context => {
           yCord: brickY,
           width: brickWidth,
           height: brickHeight,
-          colour: '#0095DD',
+          colour: `#${colour}`,
         });
       }
     }
@@ -131,10 +177,19 @@ const brickCollisionDetection = () => {
           if (b.type === BRICK_TYPE.NORMAL.type) {
             b.status = 0;
             user.score += BRICK_TYPE.NORMAL.points;
+            --currentLevel.blocksLeft;
           }
         }
       }
     }
+  }
+
+  if (currentLevel.blocksLeft === 0) {
+    currentLevel.isLevelOver = true;
+    ++currentLevel.number;
+    gridSetup ();
+    totalBricksLeft = null;
+    currentLevel.isLevelOver = false;
   }
 };
 
