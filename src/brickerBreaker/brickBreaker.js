@@ -2,6 +2,12 @@ const ELEMENT_SELECTOR = {
   USER_LIVES: 'user-life-count',
   USER_SCORE: 'user-score',
   CANVAS_ID: 'brickBreaker',
+  PLAY_PAUSE_INFO: 'play-pause-info',
+};
+const GAME_STATES = {
+  STARTED: 'STARTED',
+  PAUSED: 'PAUSED',
+  ENDED: 'ENDED',
 };
 // Game Vars
 const canvas = document.querySelector (`#${ELEMENT_SELECTOR.CANVAS_ID}`);
@@ -27,7 +33,7 @@ const ballRadius = 10;
 let dx = 1;
 let dy = -5;
 let x = canvas.width / 2;
-let y = canvas.height - 30;
+let y = canvas.height - 40;
 
 // paddle vars
 const paddleHeight = 10;
@@ -35,13 +41,14 @@ const paddleOffSet = 10;
 const paddleWidth = 75;
 let paddleX = (canvas.width - paddleWidth) / 2;
 
-const user = {
+let user = {
   lives: 5,
   score: 0,
   paddleHits: 0,
 };
 let gameInterval = null;
 let keyPressed = null;
+let gameState = GAME_STATES.PAUSED;
 
 const KEYNUM = {
   LEFT: 'LEFT',
@@ -61,6 +68,31 @@ const updateLifeCounter = () => {
 const updateScoreCounter = () => {
   document.querySelector (`#${ELEMENT_SELECTOR.USER_SCORE}`).innerHTML =
     user.score;
+};
+
+const updateGameState = () => {
+  const pauseText = document.querySelector (
+    `#${ELEMENT_SELECTOR.PLAY_PAUSE_INFO}`
+  );
+  const isGamePlaying = gameState === GAME_STATES.STARTED;
+  if (isGamePlaying) {
+    gameState = GAME_STATES.PAUSED;
+    clearInterval (gameInterval);
+    pauseText.innerHTML = 'Press Space To Start';
+  } else {
+    if (gameState === GAME_STATES.ENDED) {
+      paddleX = (canvas.width - paddleWidth) / 2;
+      gridSetup ();
+      user = {
+        lives: 5,
+        score: 0,
+        paddleHits: 0,
+      };
+    }
+    gameState = GAME_STATES.STARTED;
+    gameInterval = setInterval (setupGame, 10);
+    pauseText.innerHTML = '';
+  }
 };
 
 const addDynamicElements = () => {
@@ -211,87 +243,85 @@ const randColour = () => {
   }
 };
 
-const setupGame = context => {
+const setupGame = () => {
   let colour = '#0095DD';
+  if (keyPressed === KEYNUM.LEFT && paddleX > paddleOffSet) {
+    paddleX += -7;
+  } else if (
+    keyPressed === KEYNUM.RIGHT &&
+    paddleX < canvas.width - (paddleWidth + paddleOffSet)
+  ) {
+    paddleX += 7;
+  }
 
-  const draw = () => {
-    if (keyPressed === KEYNUM.LEFT && paddleX > paddleOffSet) {
-      paddleX += -7;
-    } else if (
-      keyPressed === KEYNUM.RIGHT &&
-      paddleX < canvas.width - (paddleWidth + paddleOffSet)
-    ) {
-      paddleX += 7;
-    }
+  // if hit left then reverse or if hit right reverse
+  if (x + dx < ballRadius || x + dx > canvas.width - ballRadius) {
+    dx = -dx;
+    colour = randColour ();
+  }
 
-    // if hit left then reverse or if hit right reverse
-    if (x + dx < ballRadius || x + dx > canvas.width - ballRadius) {
-      dx = -dx;
-      colour = randColour ();
-    }
-
-    // if hit top wall reverse
-    if (y + dy < ballRadius) {
-      dy = -dy;
-      colour = randColour ();
-      // if hit bottom lose life
-    } else if (
-      y + dy >
-      canvas.height - (ballRadius + paddleHeight + paddleOffSet)
-    ) {
-      if (x > paddleX && x < paddleX + (paddleWidth + 40)) {
-        console.log (`BALL coords: X: ${x}, Y: ${y}, DX: ${dx}, DY: ${dy}`);
-        console.log (`PADDLE X: ${paddleX} width: ${paddleWidth}`);
-        const ballOnPaddleLocation = x - paddleX;
-        const paddleLeft = paddleWidth / 3;
-        const paddleCentre = paddleLeft * 2;
-        // When ball hits left side of paddle
-        if (ballOnPaddleLocation < paddleLeft) {
-          dy = -dy;
-          dx = -Math.abs (-dx);
-          // When ball hits centre of paddle
-        } else if (
-          ballOnPaddleLocation > paddleLeft &&
-          ballOnPaddleLocation < paddleCentre
-        ) {
-          dy = -dy;
-          dx = 1;
-          // when ball hits right side of paddle
-        } else if (
-          ballOnPaddleLocation > paddleCentre &&
-          ballOnPaddleLocation <= paddleWidth
-        ) {
-          dy = -dy;
-          dx = +Math.abs (+dx);
-        }
-      } else {
-        y = canvas.height / 3;
-        x = canvas.width / 2;
-        --user.lives;
-        if (user.lives <= 0) {
-          clearInterval (gameInterval);
-        }
+  // if hit top wall reverse
+  if (y + dy < ballRadius) {
+    dy = -dy;
+    colour = randColour ();
+    // if hit bottom lose life
+  } else if (
+    y + dy >
+    canvas.height - (ballRadius + paddleHeight + paddleOffSet)
+  ) {
+    if (x > paddleX && x < paddleX + (paddleWidth + 40)) {
+      console.log (`BALL coords: X: ${x}, Y: ${y}, DX: ${dx}, DY: ${dy}`);
+      console.log (`PADDLE X: ${paddleX} width: ${paddleWidth}`);
+      const ballOnPaddleLocation = x - paddleX;
+      const paddleLeft = paddleWidth / 3;
+      const paddleCentre = paddleLeft * 2;
+      // When ball hits left side of paddle
+      if (ballOnPaddleLocation < paddleLeft) {
+        dy = -dy;
+        dx = -Math.abs (-dx);
+        // When ball hits centre of paddle
+      } else if (
+        ballOnPaddleLocation > paddleLeft &&
+        ballOnPaddleLocation < paddleCentre
+      ) {
+        dy = -dy;
+        dx = 1;
+        // when ball hits right side of paddle
+      } else if (
+        ballOnPaddleLocation > paddleCentre &&
+        ballOnPaddleLocation <= paddleWidth
+      ) {
+        dy = -dy;
+        dx = +Math.abs (+dx);
+      }
+    } else {
+      y = canvas.height / 3;
+      x = canvas.width / 2;
+      --user.lives;
+      if (user.lives <= 0) {
+        clearInterval (gameInterval);
+        gameState = GAME_STATES.ENDED;
       }
     }
+  }
 
-    context.clearRect (0, 0, canvas.width, canvas.height);
-    drawBricks (context);
-    createBall (context, {x, y, ballRadius, colour});
-    createSquare (context, {
-      xCord: paddleX,
-      yCord: canvas.height - (paddleHeight + 20),
-      width: paddleWidth,
-      height: paddleHeight,
-      colour: '#0095DD',
-    });
-    brickCollisionDetection ();
-    x += dx;
-    y += dy;
-    addDynamicElements ();
-  };
+  ctx.clearRect (0, 0, canvas.width, canvas.height);
+  drawBricks (ctx);
+  createBall (ctx, {x, y, ballRadius, colour});
+  createSquare (ctx, {
+    xCord: paddleX,
+    yCord: canvas.height - (paddleHeight + 20),
+    width: paddleWidth,
+    height: paddleHeight,
+    colour: '#0095DD',
+  });
+  brickCollisionDetection ();
+  x += dx;
+  y += dy;
+  addDynamicElements ();
 
   //animate the ball
-  gameInterval = setInterval (draw, 10);
+  // gameInterval = setInterval (draw, 10);
 };
 
 const createEventListeners = () => {
@@ -300,6 +330,8 @@ const createEventListeners = () => {
       keyPressed = KEYNUM.RIGHT;
     } else if (e.key === 'Left' || e.key === 'ArrowLeft' || e.key === 'a') {
       keyPressed = KEYNUM.LEFT;
+    } else if (e.key === 'Spacebar' || e.key === ' ') {
+      updateGameState ();
     }
   };
   const keyUpHandler = e => {
@@ -315,4 +347,4 @@ const createEventListeners = () => {
 
 createEventListeners ();
 gridSetup ();
-setupGame (ctx);
+setupGame ();

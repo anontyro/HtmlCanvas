@@ -1,5 +1,19 @@
+.main-header {
+  text-align: center;
+}
+
+.main-page {
+  width: 480px;
+  margin: auto;
+}
+
 #brickBreaker {
   border: dashed black;
+}
+
+#play-pause-info {
+  width: 50%;
+  text-align: center;
 }
 
 .player-info {

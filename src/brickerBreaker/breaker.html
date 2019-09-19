@@ -10,12 +10,16 @@
 </head>
 
 <body>
-  <h1>Brick Breaker</h1>
-  <canvas id='brickBreaker' width='480' height='320'></canvas>
+  <h1 class="main-header">Brick Breaker</h1>
+  <div class="main-page">
 
-  <div class="player-info">
-    <h3>Lives: <span id='user-life-count'></span></h3>
-    <h3>Score: <span id='user-score'></span></h3>
+    <canvas id='brickBreaker' width='480' height='320'></canvas>
+
+    <div class="player-info">
+      <h3>Lives: <span id='user-life-count'></span></h3>
+      <h3 id='play-pause-info'>Press Space To Start</h3>
+      <h3>Score: <span id='user-score'></span></h3>
+    </div>
   </div>
   <script src="./brickBreaker.js"></script>
 </body>
