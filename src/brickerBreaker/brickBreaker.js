@@ -89,10 +89,19 @@ const updateGameState = () => {
         paddleHits: 0,
       };
     }
+    pauseText.innerHTML = '';
+
     gameState = GAME_STATES.STARTED;
     gameInterval = setInterval (setupGame, 10);
-    pauseText.innerHTML = '';
   }
+};
+
+const setGameOver = () => {
+  clearInterval (gameInterval);
+  gameState = GAME_STATES.ENDED;
+  paddleX = (canvas.width - paddleWidth) / 2;
+  document.querySelector (`#${ELEMENT_SELECTOR.PLAY_PAUSE_INFO}`).innerHTML =
+    'Game Over';
 };
 
 const addDynamicElements = () => {
@@ -299,8 +308,7 @@ const setupGame = () => {
       x = canvas.width / 2;
       --user.lives;
       if (user.lives <= 0) {
-        clearInterval (gameInterval);
-        gameState = GAME_STATES.ENDED;
+        setGameOver ();
       }
     }
   }
